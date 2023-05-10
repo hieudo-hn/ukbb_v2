@@ -9,9 +9,6 @@ import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.stats.multitest import fdrcorrection
 
-from kmodes.kmodes import KModes
-from sklearn.cluster import KMeans
-
 import matplotlib.pyplot as plt
 
 import pandas as pd
@@ -20,9 +17,9 @@ from itertools import combinations
 from MFNN import MFNN
 
 
-def load_snp(file='/home/hdo/genes/7ksnps.txt'):
+def load_snp(file="/home/hdo/genes/7ksnps.txt"):
     result = []
-    with open(file, 'r') as f:
+    with open(file, "r") as f:
         for line in f:
             result.append(line.strip())
     return result
@@ -39,8 +36,11 @@ def gvif(data, indicator):
     columns = data.columns.tolist()
     columns.remove(indicator)
     X2 = data[columns].copy()
-    tmp_gvif = np.linalg.det(X1.corr()) * np.linalg.det(X2.corr()) / np.linalg.det(
-        pd.concat([X1.reset_index(drop=True), X2], axis=1).corr())
+    tmp_gvif = (
+        np.linalg.det(X1.corr())
+        * np.linalg.det(X2.corr())
+        / np.linalg.det(pd.concat([X1.reset_index(drop=True), X2], axis=1).corr())
+    )
     return tmp_gvif
 
 
@@ -68,18 +68,30 @@ def multinomial_mvl(Y_train, x_train, result_file):
 def display_result(variable, res, result_file):
     print(res.summary())
     df = pd.DataFrame(variable, columns=["variable"])
-    df = pd.merge(df, pd.DataFrame(res.params, columns=[
-                  "coefficient"]), left_on='variable', right_index=True)
+    df = pd.merge(
+        df,
+        pd.DataFrame(res.params, columns=["coefficient"]),
+        left_on="variable",
+        right_index=True,
+    )
     conf_int = pd.DataFrame(res.conf_int())
-    conf_int = conf_int.rename({0: '2.5%', 1: '97.5%'}, axis=1)
-    df = pd.merge(df, conf_int, left_on='variable', right_index=True)
-    df = pd.merge(df, pd.DataFrame(res.bse, columns=[
-                  'std error']), left_on='variable', right_index=True)
-    df = pd.merge(df, pd.DataFrame(res.pvalues, columns=[
-                  'pvalues']), left_on='variable', right_index=True)
-    adjusted = fdrcorrection(res.pvalues, method='indep', is_sorted=False)[1]
-    df['adjusted pval'] = adjusted
-    df = df.sort_values(by='adjusted pval')
+    conf_int = conf_int.rename({0: "2.5%", 1: "97.5%"}, axis=1)
+    df = pd.merge(df, conf_int, left_on="variable", right_index=True)
+    df = pd.merge(
+        df,
+        pd.DataFrame(res.bse, columns=["std error"]),
+        left_on="variable",
+        right_index=True,
+    )
+    df = pd.merge(
+        df,
+        pd.DataFrame(res.pvalues, columns=["pvalues"]),
+        left_on="variable",
+        right_index=True,
+    )
+    adjusted = fdrcorrection(res.pvalues, method="indep", is_sorted=False)[1]
+    df["adjusted pval"] = adjusted
+    df = df.sort_values(by="adjusted pval")
     df.to_csv(result_file)
 
     print("AIC: {}".format(res.aic))
@@ -110,13 +122,13 @@ def mrmr(X, y, **kwargs):
     ---------
     Brown, Gavin et al. "Conditional Likelihood Maximisation: A Unifying Framework for Information Theoretic Feature Selection." JMLR 2012.
     """
-    if 'n_selected_features' in kwargs.keys():
-        n_selected_features = kwargs['n_selected_features']
+    if "n_selected_features" in kwargs.keys():
+        n_selected_features = kwargs["n_selected_features"]
         F, J_CMI, MIfy = LCSI.lcsi(
-            X, y, gamma=0, function_name='MRMR', n_selected_features=n_selected_features)
+            X, y, gamma=0, function_name="MRMR", n_selected_features=n_selected_features
+        )
     else:
-
-        F, J_CMI, MIfy = LCSI.lcsi(X, y, gamma=0, function_name='MRMR')
+        F, J_CMI, MIfy = LCSI.lcsi(X, y, gamma=0, function_name="MRMR")
     return F
 
 
@@ -144,12 +156,13 @@ def jmi(X, y, **kwargs):
     ---------
     Brown, Gavin et al. "Conditional Likelihood Maximisation: A Unifying Framework for Information Theoretic Feature Selection." JMLR 2012.
     """
-    if 'n_selected_features' in kwargs.keys():
-        n_selected_features = kwargs['n_selected_features']
+    if "n_selected_features" in kwargs.keys():
+        n_selected_features = kwargs["n_selected_features"]
         F, J_CMI, MIfy = LCSI.lcsi(
-            X, y, function_name='JMI', n_selected_features=n_selected_features)
+            X, y, function_name="JMI", n_selected_features=n_selected_features
+        )
     else:
-        F, J_CMI, MIfy = LCSI.lcsi(X, y, function_name='JMI')
+        F, J_CMI, MIfy = LCSI.lcsi(X, y, function_name="JMI")
     return F
 
 
@@ -158,7 +171,7 @@ def makePairwise(df, columns_to_merge):
     ohc = []
     for pair in pairs:
         # Create new column name as combination of original column names
-        new_col_name = f'{pair[0]}_{pair[1]}'
+        new_col_name = f"{pair[0]}_{pair[1]}"
         df[new_col_name] = df[pair[0]].astype(str) + df[pair[1]].astype(str)
         ohc.append(new_col_name)
     # df.drop(columns_to_merge, axis=1, inplace=True)
@@ -251,8 +264,7 @@ gvif_result = "/home/hdo/ukbb_analyzer/Data/gvif_male.csv"
 # snp = ["rs79590198", "rs78929565", "rs1398731", "rs12484542",
 #       "rs76844436", "rs885747", "rs12578274", "rs6825994"]
 # male
-snp = ["rs138102314", "rs117516155",
-       "rs74020725", "rs114825723", "rs76379455"]
+snp = ["rs138102314", "rs117516155", "rs74020725", "rs114825723", "rs76379455"]
 to_pairwise = ["rs114825723", "rs117516155"]
 # overall
 # snp = ["rs885747", "rs35488012", "rs78847165"]
@@ -261,10 +273,11 @@ cols = cols + clinical_factor
 
 data = pd.read_csv(data_file, usecols=cols)
 data = data[data["Sex"] == 1]
-data.drop(['Sex'], axis=1, inplace=True)
+data.drop(["Sex"], axis=1, inplace=True)
 # OHC
-data = pd.get_dummies(data, columns=["Chronotype",
-                                     "Sleeplessness/Insomnia"], drop_first=True)
+data = pd.get_dummies(
+    data, columns=["Chronotype", "Sleeplessness/Insomnia"], drop_first=True
+)
 # Scale
 # scaler = StandardScaler()
 # scaler.fit(data[["Age"]])
