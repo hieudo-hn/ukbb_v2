@@ -78,6 +78,7 @@ def getImputedGeneticInformation(chroms, rsids):
     for i in range(len(chroms)):
         rows = []
         index = []
+        # bgen file should be placed here
         bgenPath = os.path.join(
             cwd,
             "Data/genetics/EGAD00010001226/001/",
@@ -102,6 +103,12 @@ def getImputedGeneticInformation(chroms, rsids):
         df.to_csv(outFile)
 
 
+def combine_df(df1, df2):
+    # merge by participant ID
+    final = pd.merge(df1, df2, on="ID_1", how="inner")
+    return final
+
+
 chroms, rsids = loadSnpAndChroms()
 # clinical factors
 clinical_factors = [
@@ -111,9 +118,13 @@ clinical_factors = [
     ("Sleeplessness/Insomnia", 1200, "continuous"),
 ]
 
-# load clinical factors info of all participants from ukbb
+# load data from ukbb
+clinical_factor_df = getClinicalFactor(clinical_factors)
+non_imputed_data = getGeneticInformation(chroms, rsids)
+data = combine_df(clinical_factor_df, non_imputed_data)
+data.to_csv("data.csv")
 
+# imputed data
+getImputedGeneticInformation(chroms, rsids)
 
-# final = pd.read_csv("/home/hdo/ukbb_analyzer/Data/hieu_data_imputed_non_binary_all.csv")
-# final = pd.merge(final, fields, on="ID_1", how="inner")
-# final.to_csv("/home/hdo/ukbb_analyzer/Data/hieu_data_imputed_non_binary_all_v2.csv")
+# you can merge them into data
