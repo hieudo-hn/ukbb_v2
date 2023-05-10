@@ -1,0 +1,35 @@
+{
+    "name": "MFNN_female",
+    "hyperparams": {
+        "fold": 10,
+        "epochs": 40,
+        "batch_size": 128,
+        "learning_rate": 1e-2,
+        "momentum": 1e-2,
+        "smote": 0.35,
+        "optimizer": "sgd",
+        "loss": "binary_crossentropy", 
+        "metrics": [
+            "Accuracy",
+            "Precision",
+            "Recall"
+        ]
+    },
+    "model": {
+        "hidden": [
+            {
+                "units": 20,
+                "activation": "relu",
+                "name": "hidden_layer_1"
+            }
+        ],
+        "output": {
+            "units": 1, 
+            "activation": "sigmoid"
+        }
+    },
+    "figure": {
+        "loss_figure": "female_loss.png",
+        "auc_figure": "female_auc.png"
+    }
+}
