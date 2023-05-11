@@ -1,12 +1,6 @@
 from skfeature.function.information_theoretical_based import LCSI
-from sklearn.linear_model import LogisticRegression
-from sklearn.feature_selection import RFE
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-
 import statsmodels.api as sm
 
-from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.stats.multitest import fdrcorrection
 
 import matplotlib.pyplot as plt
@@ -17,6 +11,7 @@ from itertools import combinations
 from MFNN import MFNN
 
 
+# load snp from text file
 def load_snp(file="/home/hdo/genes/7ksnps.txt"):
     result = []
     with open(file, "r") as f:
@@ -25,25 +20,13 @@ def load_snp(file="/home/hdo/genes/7ksnps.txt"):
     return result
 
 
+# modify the specified SNP in the snp array into dominant model
 def dominant_model(data, snp):
     temp = data[snp]
     data[snp] = [0 if i == 0 else 1 for i in temp]
 
 
-def gvif(data, indicator):
-    X1 = pd.DataFrame(data[indicator], columns=[indicator])
-    X1 = pd.get_dummies(X1, columns=[indicator], drop_first=True)
-    columns = data.columns.tolist()
-    columns.remove(indicator)
-    X2 = data[columns].copy()
-    tmp_gvif = (
-        np.linalg.det(X1.corr())
-        * np.linalg.det(X2.corr())
-        / np.linalg.det(pd.concat([X1.reset_index(drop=True), X2], axis=1).corr())
-    )
-    return tmp_gvif
-
-
+# multivarite logistic regression
 def mvlog(Y_train, x_train, result_file):
     X_train_sm = sm.add_constant(x_train)
     logm2 = sm.GLM(Y_train, X_train_sm, family=sm.families.Binomial())
@@ -51,6 +34,7 @@ def mvlog(Y_train, x_train, result_file):
     display_result(X_train_sm.columns, res, result_file)
 
 
+# multivarite linear regression
 def mvlinear(Y_train, x_train, result_file):
     X_train_sm = sm.add_constant(x_train)
     logm2 = sm.GLM(Y_train, X_train_sm, family=sm.families.Gaussian())
@@ -58,6 +42,7 @@ def mvlinear(Y_train, x_train, result_file):
     display_result(X_train_sm.columns, res, result_file)
 
 
+# multinomial logistic regression
 def multinomial_mvl(Y_train, x_train, result_file):
     X_train_sm = sm.add_constant(x_train)
     multinomial_log = sm.MNLogit(Y_train, X_train_sm)
@@ -98,74 +83,7 @@ def display_result(variable, res, result_file):
     print("BIC: {}".format(res.bic))
 
 
-def mrmr(X, y, **kwargs):
-    """
-    This function implements the MRMR feature selection
-    Input
-    -----
-    X: {numpy array}, shape (n_samples, n_features)
-        input data, guaranteed to be discrete
-    y: {numpy array}, shape (n_samples,)
-        input class labels
-    kwargs: {dictionary}
-        n_selected_features: {int}
-            number of features to select
-    Output
-    ------
-    F: {numpy array}, shape (n_features,)
-        index of selected features, F[0] is the most important feature
-    J_CMI: {numpy array}, shape: (n_features,)
-        corresponding objective function value of selected features
-    MIfy: {numpy array}, shape: (n_features,)
-        corresponding mutual information between selected features and response
-    Reference
-    ---------
-    Brown, Gavin et al. "Conditional Likelihood Maximisation: A Unifying Framework for Information Theoretic Feature Selection." JMLR 2012.
-    """
-    if "n_selected_features" in kwargs.keys():
-        n_selected_features = kwargs["n_selected_features"]
-        F, J_CMI, MIfy = LCSI.lcsi(
-            X, y, gamma=0, function_name="MRMR", n_selected_features=n_selected_features
-        )
-    else:
-        F, J_CMI, MIfy = LCSI.lcsi(X, y, gamma=0, function_name="MRMR")
-    return F
-
-
-def jmi(X, y, **kwargs):
-    """
-    This function implements the JMI feature selection
-    Input
-    -----
-    X: {numpy array}, shape (n_samples, n_features)
-        input data, guaranteed to be discrete
-    y: {numpy array}, shape (n_samples,)
-        input class labels
-    kwargs: {dictionary}
-        n_selected_features: {int}
-            number of features to select
-    Output
-    ------
-    F: {numpy array}, shape (n_features,)
-        index of selected features, F[0] is the most important feature
-    J_CMI: {numpy array}, shape: (n_features,)
-        corresponding objective function value of selected features
-    MIfy: {numpy array}, shape: (n_features,)
-        corresponding mutual information between selected features and response
-    Reference
-    ---------
-    Brown, Gavin et al. "Conditional Likelihood Maximisation: A Unifying Framework for Information Theoretic Feature Selection." JMLR 2012.
-    """
-    if "n_selected_features" in kwargs.keys():
-        n_selected_features = kwargs["n_selected_features"]
-        F, J_CMI, MIfy = LCSI.lcsi(
-            X, y, function_name="JMI", n_selected_features=n_selected_features
-        )
-    else:
-        F, J_CMI, MIfy = LCSI.lcsi(X, y, function_name="JMI")
-    return F
-
-
+# make pairwise for epistatic relationship
 def makePairwise(df, columns_to_merge):
     pairs = list(combinations(columns_to_merge, 2))
     ohc = []
@@ -174,7 +92,6 @@ def makePairwise(df, columns_to_merge):
         new_col_name = f"{pair[0]}_{pair[1]}"
         df[new_col_name] = df[pair[0]].astype(str) + df[pair[1]].astype(str)
         ohc.append(new_col_name)
-    # df.drop(columns_to_merge, axis=1, inplace=True)
     return pd.get_dummies(df, columns=ohc, drop_first=True)
 
 
@@ -227,17 +144,6 @@ gvif_result = "/home/hdo/ukbb_analyzer/Data/gvif_male.csv"
 # data.drop(['Sex'], axis=1, inplace=True)
 # data.to_csv("male.csv")
 
-# df = 1
-# vif = pd.DataFrame()
-# vif['Features'] = just_snp.columns
-# vif['VIF'] = [variance_inflation_factor(
-#     just_snp.values, i) for i in range(just_snp.shape[1])]
-# vif['GVIF'] = [gvif(just_snp, snp) for snp in just_snp.columns]
-# # df of snp is 1 under the dominant model
-# vif['GVIF_1/2df'] = np.power(vif['GVIF'], 1/(2*df))
-# vif['VIF'] = round(vif['VIF'], 2)
-# vif = vif.sort_values(by="VIF", ascending=False)
-# print(vif)
 
 ######### Loading GVIF result ###############
 # gvif_df = pd.read_csv(gvif_result, index_col=0)
@@ -278,12 +184,8 @@ data.drop(["Sex"], axis=1, inplace=True)
 data = pd.get_dummies(
     data, columns=["Chronotype", "Sleeplessness/Insomnia"], drop_first=True
 )
-# Scale
-# scaler = StandardScaler()
-# scaler.fit(data[["Age"]])
 
-# transform the data using the scaler
-# data['Age'] = scaler.transform(data[["Age"]])
+##################### DEEP LEARNING #########################
 
 data = makePairwise(data, to_pairwise)
 mfnn_config = "/home/hdo/ukbb_analyzer/MFNN_config/male.json"

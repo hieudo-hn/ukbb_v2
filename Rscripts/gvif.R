@@ -1,9 +1,18 @@
+#uncomment this if you need to install packages
+#install.packages("car")
+#install.packages("dplyr")
+
 library(car)
 library(dplyr)
+
+#################################################################
 
 # this csv file should only have SNPs and the last column is your target 
 # variable (hard-coded - PHQ9_binary, you should change the code down here)
 data = read.csv("~/Desktop/male.csv")
+
+#################################################################
+
 cols = colnames(data)[2:(length(colnames(data))-1)] # remove the index column
 mdl <- glm(as.formula(paste("PHQ9_binary~", paste(cols, collapse="+"))), data=
              data, family=binomial)
@@ -14,4 +23,8 @@ mdl <- glm(as.formula(paste("PHQ9_binary~", paste(after_remove, collapse="+"))),
              data, family=binomial)
 gvif_df = as.data.frame(vif(mdl)) 
 gvif_df = gvif_df %>% arrange(vif(mdl))
+
+#################################################################
+
+# change the output here
 write.csv(gvif_df, file="~/Desktop/gvif_male.csv")

@@ -33,7 +33,7 @@ def getGeneticInformation(chroms, rsids):
     iids = fam["iid"].tolist()
     df = pd.DataFrame(df_rows, index=index, columns=iids)
     df = df.transpose()
-    df["ID_1"] = df.index
+    df["ID_1"] = df.index.astype(int)
     return df
 
 
@@ -57,6 +57,58 @@ def loadSnpAndChroms(file=os.path.join(cwd, "genes", "allSNPs.txt")):
         line = f.readline()
     f.close()
     return chroms, rsids
+
+
+# 1 if have depression, 0 if do not have depression
+def calcPHQ9(binary_cutoff=10):
+    test = [
+        ("Recent changes in speed/amount of moving or speaking", 20518, "continuous"),
+        ("Recent feelings of depression", 20510, "continuous"),
+        ("Recent feelings of inadequacy", 20507, "continuous"),
+        ("Recent feelings of tiredness or low energy", 20519, "continuous"),
+        ("Recent lack of interest or pleasure in doing things", 20514, "continuous"),
+        ("Recent poor appetite or overeating", 20511, "continuous"),
+        ("Recent thoughts of suicide or self-harm", 20513, "continuous"),
+        ("Recent trouble concentrating on things", 20508, "continuous"),
+        (
+            "Trouble falling or staying asleep, or sleeping too much",
+            20517,
+            "continuous",
+        ),
+    ]
+    eid, fields, _ = create_dataset(
+        test, parse_dataset_covariates_kwargs={"use_genotyping_metadata": False}
+    )
+    rows_binary = []
+    rows_score = []
+    for i in range(len(fields)):
+        row = fields.iloc[i, :].tolist()
+        s = 0
+        for j in row:
+            if np.isnan(j):
+                s = -1
+                break
+            if j >= 0:
+                s += j - 1
+        if s == -1:
+            rows_binary.append(np.nan)
+            rows_score.append(np.nan)
+        elif s < binary_cutoff:
+            rows_binary.append(0)
+            rows_score.append(s)
+        else:
+            rows_binary.append(1)
+            rows_score.append(s)
+
+    fields.drop(
+        labels=fields.columns[[i for i in range(len(test))]],
+        axis=1,
+        inplace=True,
+    )
+    fields["PHQ9"] = rows_score
+    fields["PHQ9_binary"] = rows_binary
+    fields["ID_1"] = eid
+    return fields
 
 
 # return a dataframe with all clinical_factors
@@ -99,6 +151,7 @@ def getImputedGeneticInformation(chroms, rsids):
                 print("Not found rsid: " + rsid)
         df = pd.DataFrame(rows, index=index, columns=df_tmp["ID_1"])
         df = df.transpose()
+        df["ID_1"] = df.index.astype(int)
         outFile = os.path.join(cwd, "Data", "imputed_{}.csv".format(chroms[i]))
         df.to_csv(outFile)
 
@@ -120,11 +173,15 @@ clinical_factors = [
 
 # load data from ukbb
 clinical_factor_df = getClinicalFactor(clinical_factors)
+phq9_df = calcPHQ9()
 non_imputed_data = getGeneticInformation(chroms, rsids)
 data = combine_df(clinical_factor_df, non_imputed_data)
+data = combine_df(data, phq9_df)
 data.to_csv("data.csv")
 
 # imputed data
-getImputedGeneticInformation(chroms, rsids)
+# getImputedGeneticInformation(chroms, rsids)
 
-# you can merge them into data
+# you can merge them into one dataframe and save it using combine_df
+
+# if you want to plot gender versus PHQ9 there is a file in util folder to help you

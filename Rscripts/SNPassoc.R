@@ -1,5 +1,10 @@
+#uncomment this if you need to install packages
+#install.packages("SNPassoc")
+#install.packages("dplyr")
 library("SNPassoc")
 library(dplyr)
+
+#################################################################
 
 # change to your desired SNP here
 female = c("rs79590198","rs78929565","rs1398731","rs12484542",
@@ -13,8 +18,11 @@ overall = c("rs78847165", "rs35488012", "rs885747")
 clinical = c("Age", "Chronotype", "Sleeplessness.Insomnia")
 target = "PHQ9_binary"
 
+# change the location of your data here
 data = read.csv("~/Desktop/result.csv")
 snp = colnames(data)[4:19] # these are the snp columns
+
+#################################################################
 
 data <- data %>%
   mutate_at(vars(4:19), 
