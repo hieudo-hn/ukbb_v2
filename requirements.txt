@@ -9,3 +9,5 @@ xgboost
 statsmodels
 itertools
 skfeature
+networkx
+plotly
