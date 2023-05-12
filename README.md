@@ -9,6 +9,8 @@ Eg. if using Colgate turing account, type:
 ```Conda create --name <name-of-environment> python=3.10 R=4.2```
 - How to activate the environment:
 ```conda activate <name-of-environment>```
+- Drive Link: 
+```https://drive.google.com/drive/folders/11WjLJ99bSir_o1pJJFBG1XdoAt_8DQyM?usp=sharing```
 
 # Prerequisite:
 
